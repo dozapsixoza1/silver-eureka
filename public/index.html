@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tiegram</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:          #0C0D11;
+      --sidebar-bg:  #12141A;
+      --card:        #1A1D27;
+      --card-hover:  #222635;
+      --border:      #252836;
+      --accent:      #7B5EA7;
+      --accent2:     #4E3A8E;
+      --accent-rgb:  123,94,167;
+      --accent-glow: rgba(123,94,167,0.20);
+      --text:        #E4E6F0;
+      --text2:       #7A7F99;
+      --text3:       #454960;
+      --own-msg:     #2D1B5E;
+      --other-msg:   #1A1D27;
+      --online:      #3DD674;
+      --danger:      #FF4D6D;
+      --success:     #3DD674;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Rubik', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ─── AUTH ─── */
+    #authWrap {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+    }
+
+    #authWrap::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 60% at 10% 80%, rgba(123,94,167,.12) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 90% 15%, rgba(78,58,142,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(123,94,167,.05) 0%, transparent 70%);
+    }
+
+    /* particle dots */
+    #authWrap::after {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(123,94,167,0.15) 1px, transparent 1px);
+      background-size: 36px 36px;
+    }
+
+    .auth-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 44px 40px 40px;
+      width: 420px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 40px 100px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.03), 0 0 60px rgba(123,94,167,.08);
+      animation: cardIn .45s cubic-bezier(.16,1,.3,1) both;
+    }
+
+    .auth-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20px; right: 20px; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(123,94,167,.5), transparent);
+      border-radius: 1px;
+    }
+
+    @keyframes cardIn {
+      from { opacity:0; transform: translateY(28px) scale(.96); }
+      to   { opacity:1; transform: translateY(0)    scale(1); }
+    }
+
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .auth-logo-img {
+      width: 84px; height: 84px;
+      border-radius: 22px;
+      display: inline-block;
+      margin-bottom: 16px;
+      box-shadow: 0 12px 40px rgba(123,94,167,.45), 0 0 0 1px rgba(255,255,255,.08);
+      transition: transform .2s;
+      object-fit: cover;
+    }
+
+    .auth-logo-img:hover { transform: scale(1.04); }
+
+    .auth-logo h1 {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 28px; font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(120deg, #c4a8ff 0%, #fff 60%, #a78bfa 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .auth-logo-sub {
+      font-size: 12px;
+      color: var(--text3);
+      margin-top: 4px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .auth-title { font-size: 19px; font-weight: 600; margin-bottom: 6px; }
+    .auth-sub { font-size: 13.5px; color: var(--text2); line-height: 1.55; margin-bottom: 22px; }
+
+    .tg-hint {
+      background: rgba(123,94,167,.09);
+      border: 1px solid rgba(123,94,167,.22);
+      border-radius: 12px;
+      padding: 13px 15px;
+      margin-bottom: 20px;
+      font-size: 13px; color: #c4a8ff;
+      display: flex; align-items: flex-start; gap: 10px;
+      line-height: 1.5;
+    }
+    .tg-hint svg { flex-shrink: 0; margin-top: 1px; }
+
+    .inp-label {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .6px;
+      color: var(--text2); margin-bottom: 7px;
+    }
+    .inp-wrap { position: relative; margin-bottom: 14px; }
+    .inp-wrap input {
+      width: 100%;
+      background: var(--sidebar-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 16px 13px 46px;
+      font-family: 'Rubik', sans-serif;
+      font-size: 15px; color: var(--text);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .inp-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .inp-wrap input::placeholder { color: var(--text3); }
+    .inp-icon {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%); font-size: 17px; pointer-events: none;
+    }
+
+    .btn-main {
+      width: 100%; margin-top: 6px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; border: none; border-radius: 12px;
+      padding: 14px;
+      font-family: 'Rubik', sans-serif; font-size: 15px; font-weight: 600;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s, opacity .15s;
+      box-shadow: 0 6px 24px rgba(123,94,167,.35);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-main:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(123,94,167,.45); }
+    .btn-main:active:not(:disabled) { transform: translateY(0); }
+    .btn-main:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-back {
+      background: none; border: none; color: var(--accent);
+      font-family: 'Rubik', sans-serif; font-size: 13px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 5px;
+      margin-bottom: 20px; padding: 0;
+      transition: opacity .15s;
+    }
+    .btn-back:hover { opacity: .75; }
+
+    .code-row { display: flex; gap: 9px; margin-bottom: 22px; }
+    .code-row input {
+      flex: 1;
+      background: var(--sidebar-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 6px;
+      font-family: 'Rubik', sans-serif;
+      font-size: 22px; font-weight: 600;
+      color: var(--text); text-align: center;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .code-row input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .code-row input.filled { border-color: var(--accent); color: #c4a8ff; }
+
+    .err { color: var(--danger); font-size: 12.5px; text-align: center; margin-top: 10px; display: none; }
+
+    .screen { display: none; }
+    .screen.on { display: block; }
+
+    .spin {
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,.25); border-top-color: #fff;
+      border-radius: 50%;
+      animation: rot .65s linear infinite; display: inline-block;
+    }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    /* ─── MESSENGER ─── */
+    #app { display: none; height: 100vh; animation: fadeUp .35s ease both; }
+    #app.on { display: flex; }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .sidebar {
+      width: 340px; flex-shrink: 0;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: relative; z-index: 10;
+    }
+
+    .sb-top {
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sb-logo-img {
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      object-fit: cover;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(123,94,167,.3);
+    }
+    .sb-logo-text {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 16px; font-weight: 900; letter-spacing: -.5px;
+      background: linear-gradient(120deg, #c4a8ff, #fff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .sb-top-actions { margin-left: auto; display: flex; gap: 6px; }
+
+    .ico-btn {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: var(--card); border: none;
+      color: var(--text2); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      transition: background .15s, color .15s;
+    }
+    .ico-btn:hover { background: var(--card-hover); color: var(--text); }
+
+    .sb-search { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .sb-search-wrap { position: relative; }
+    .sb-search-wrap input {
+      width: 100%;
+      background: var(--card);
+      border: 1.5px solid transparent;
+      border-radius: 10px;
+      padding: 9px 14px 9px 36px;
+      font-family: 'Rubik', sans-serif; font-size: 13.5px; color: var(--text);
+      outline: none; transition: border-color .2s;
+    }
+    .sb-search-wrap input:focus { border-color: var(--border); }
+    .sb-search-wrap input::placeholder { color: var(--text3); }
+    .sb-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; pointer-events: none; }
+
+    .chat-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+
+    .chat-item {
+      padding: 11px 14px;
+      display: flex; align-items: center; gap: 11px;
+      cursor: pointer; border-radius: 12px; margin: 1px 7px;
+      transition: background .14s;
+    }
+    .chat-item:hover { background: var(--card); }
+    .chat-item.active { background: var(--card-hover); }
+
+    .av {
+      flex-shrink: 0; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; color: #fff; position: relative;
+    }
+    .av.lg { width: 48px; height: 48px; font-size: 19px; }
+    .av.sm { width: 40px; height: 40px; font-size: 16px; }
+    .av.xs { width: 34px; height: 34px; font-size: 13px; }
+    .av.online::after {
+      content: ''; position: absolute;
+      bottom: 1px; right: 1px;
+      width: 11px; height: 11px;
+      background: var(--online); border-radius: 50%;
+      border: 2px solid var(--sidebar-bg);
+    }
+
+    .ci-info { flex: 1; min-width: 0; }
+    .ci-name { font-size: 14.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ci-preview { font-size: 12.5px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .ci-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+    .ci-time { font-size: 11.5px; color: var(--text3); }
+    .badge { background: var(--accent); color: #fff; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center; }
+
+    .empty-list { text-align: center; padding: 48px 20px; color: var(--text3); font-size: 13px; }
+    .empty-list .emo { font-size: 44px; opacity: .3; margin-bottom: 12px; }
+
+    .me-bar {
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .me-bar-info { flex: 1; min-width: 0; }
+    .me-bar-name { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .me-bar-phone { font-size: 11.5px; color: var(--text3); margin-top: 1px; }
+
+    .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; overflow: hidden; }
+    .chat-area::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none; opacity: .35;
+      background-image: radial-gradient(circle, rgba(123,94,167,0.2) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    .welcome {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: var(--text3); gap: 12px; position: relative; z-index: 1;
+    }
+    .welcome .wlogo { width: 72px; height: 72px; border-radius: 18px; object-fit: cover; opacity: .25; }
+    .welcome .wt { font-size: 17px; font-weight: 500; color: var(--text2); }
+    .welcome .ws { font-size: 13px; }
+
+    #chatView { display: none; flex-direction: column; flex: 1; position: relative; z-index: 1; }
+    #chatView.on { display: flex; }
+
+    .chat-hdr {
+      padding: 0 18px;
+      height: 62px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 13px;
+      background: var(--sidebar-bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .chat-hdr-info { flex: 1; }
+    .chat-hdr-name { font-size: 15px; font-weight: 600; }
+    .chat-hdr-status { font-size: 12px; color: var(--online); margin-top: 2px; }
+
+    .msgs {
+      flex: 1; overflow-y: auto;
+      padding: 18px 18px 10px;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+
+    .date-sep {
+      text-align: center; font-size: 11.5px; color: var(--text3);
+      margin: 12px 0; display: flex; align-items: center; gap: 10px;
+    }
+    .date-sep::before, .date-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .msg-row { display: flex; align-items: flex-end; gap: 7px; }
+    .msg-row.own { flex-direction: row-reverse; }
+
+    .bubble {
+      max-width: 62%; padding: 9px 13px;
+      border-radius: 18px; font-size: 14.5px; line-height: 1.5;
+      word-break: break-word;
+    }
+    .msg-row.own .bubble { background: var(--own-msg); border-bottom-right-radius: 4px; }
+    .msg-row:not(.own) .bubble { background: var(--other-msg); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .msg-meta { font-size: 10.5px; color: rgba(255,255,255,.35); white-space: nowrap; margin-bottom: 3px; flex-shrink: 0; }
+
+    .typing-indicator {
+      display: flex; align-items: center; gap: 4px;
+      padding: 10px 14px; background: var(--other-msg);
+      border: 1px solid var(--border);
+      border-radius: 18px; border-bottom-left-radius: 4px;
+      max-width: 68px;
+    }
+    .typing-dot {
+      width: 7px; height: 7px; background: var(--text3); border-radius: 50%;
+      animation: typingBounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: .2s; }
+    .typing-dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: .4; }
+      40% { transform: translateY(-5px); opacity: 1; }
+    }
+
+    .input-bar {
+      padding: 10px 14px;
+      display: flex; align-items: flex-end; gap: 9px;
+      background: var(--sidebar-bg);
+      border-top: 1px solid var(--border);
+    }
+    .msg-inp-wrap {
+      flex: 1; background: var(--card);
+      border-radius: 20px; padding: 9px 14px;
+      display: flex; align-items: flex-end; gap: 8px;
+      border: 1.5px solid transparent;
+      transition: border-color .2s;
+    }
+    .msg-inp-wrap:focus-within { border-color: var(--border); }
+    #msgInput {
+      flex: 1; background: none; border: none; outline: none;
+      font-family: 'Rubik', sans-serif; font-size: 14.5px; color: var(--text);
+      resize: none; max-height: 120px; line-height: 1.5;
+    }
+    #msgInput::placeholder { color: var(--text3); }
+    .ico-btn-tr { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 17px; padding: 2px; transition: color .15s; }
+    .ico-btn-tr:hover { color: var(--text2); }
+
+    .send-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none; color: #fff;
+      cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 4px 14px rgba(123,94,167,.3);
+    }
+    .send-btn:hover { transform: scale(1.07); box-shadow: 0 6px 20px rgba(123,94,167,.5); }
+    .send-btn:active { transform: scale(.97); }
+
+    #toast {
+      position: fixed; top: 20px; right: 20px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 18px;
+      font-size: 13.5px; box-shadow: 0 12px 40px rgba(0,0,0,.5);
+      z-index: 9999; max-width: 300px;
+      animation: toastIn .28s ease both;
+      display: none;
+    }
+    @keyframes toastIn {
+      from { opacity:0; transform: translateX(60px); }
+      to   { opacity:1; transform: translateX(0); }
+    }
+
+    #newChatModal {
+      position: fixed; inset: 0; background: rgba(0,0,0,.65);
+      display: none; align-items: center; justify-content: center;
+      z-index: 200; backdrop-filter: blur(6px);
+    }
+    #newChatModal.on { display: flex; }
+    .modal-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 28px; width: 380px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.6);
+      animation: cardIn .3s ease both;
+    }
+    .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 18px; }
+    .user-row {
+      display: flex; align-items: center; gap: 11px;
+      padding: 10px 12px; border-radius: 11px;
+      cursor: pointer; transition: background .14s;
+    }
+    .user-row:hover { background: var(--card-hover); }
+    .user-row-name { font-size: 14px; font-weight: 500; }
+    .user-row-phone { font-size: 12px; color: var(--text3); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ AUTH ═══════════ -->
+<div id="authWrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <img class="auth-logo-img" id="authLogoImg" src="" alt="Tiegram">
+      <h1>Tiegram</h1>
+      <div class="auth-logo-sub">Messenger</div>
+    </div>
+
+    <!-- SCREEN 1: Phone -->
+    <div class="screen on" id="sPhone">
+      <div class="auth-title">Войти в Tiegram</div>
+      <div class="auth-sub">Введите виртуальный номер, полученный в Telegram-боте</div>
+
+      <div class="tg-hint">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+        </svg>
+        <div>Откройте бота в Telegram → нажмите <strong>«Получить номер»</strong> → скопируйте номер сюда</div>
+      </div>
+
+      <div class="inp-label">Номер телефона</div>
+      <div class="inp-wrap">
+        <span class="inp-icon">📱</span>
+        <input type="tel" id="phoneInp" placeholder="+7 900 123 45 67"
+          onkeydown="if(event.key==='Enter')requestCode()">
+      </div>
+      <div class="err" id="phoneErr">Номер не найден. Получите его в боте.</div>
+      <button class="btn-main" id="phoneBtn" onclick="requestCode()">
+        Получить код
+      </button>
+    </div>
+
+    <!-- SCREEN 2: Code -->
+    <div class="screen" id="sCode">
+      <button class="btn-back" onclick="goScreen('sPhone')">← Назад</button>
+      <div class="auth-title">Введите код</div>
+      <div class="auth-sub">Бот прислал код на номер <strong id="codeTo"></strong></div>
+
+      <div class="tg-hint">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+        </svg>
+        <div>Бот прислал вам 6-значный код — введите его ниже</div>
+      </div>
+
+      <div class="code-row" id="codeRow">
+        <input type="text" inputmode="numeric" maxlength="1" onkeydown="codeKey(event,0)" oninput="codeInp(event,0)">
+        <input type="text" inputmode="numeric" maxlength="1" onkeydown="codeKey(event,1)" oninput="codeInp(event,1)">
+        <input type="text" inputmode="numeric" maxlength="1" onkeydown="codeKey(event,2)" oninput="codeInp(event,2)">
+        <input type="text" inputmode="numeric" maxlength="1" onkeydown="codeKey(event,3)" oninput="codeInp(event,3)">
+        <input type="text" inputmode="numeric" maxlength="1" onkeydown="codeKey(event,4)" oninput="codeInp(event,4)">
+        <input type="text" inputmode="numeric" maxlength="1" onkeydown="codeKey(event,5)" oninput="codeInp(event,5)">
+      </div>
+      <div class="err" id="codeErr">Неверный код. Попробуйте ещё раз.</div>
+      <button class="btn-main" id="codeBtn" onclick="verifyCode()">Войти →</button>
+    </div>
+
+    <!-- SCREEN 3: Profile -->
+    <div class="screen" id="sProfile">
+      <div class="auth-title">Настройте профиль</div>
+      <div class="auth-sub">Выберите имя и никнейм для вашего аккаунта</div>
+
+      <div class="inp-label">Имя</div>
+      <div class="inp-wrap">
+        <span class="inp-icon">👤</span>
+        <input type="text" id="nameInp" placeholder="Ваше имя"
+          onkeydown="if(event.key==='Enter')setupProfile()">
+      </div>
+
+      <div class="inp-label">Имя пользователя</div>
+      <div class="inp-wrap">
+        <span class="inp-icon" style="font-size:14px;color:var(--text2);">@</span>
+        <input type="text" id="unameInp" placeholder="username"
+          onkeydown="if(event.key==='Enter')setupProfile()">
+      </div>
+
+      <button class="btn-main" onclick="setupProfile()">Начать общение →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MESSENGER ═══════════ -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sb-top">
+      <img class="sb-logo-img" id="sbLogoImg" src="" alt="Tiegram">
+      <span class="sb-logo-text">Tiegram</span>
+      <div class="sb-top-actions">
+        <button class="ico-btn" title="Новый чат" onclick="openNewChat()">✏️</button>
+        <button class="ico-btn" title="Настройки" onclick="toast('⚙️ Настройки в разработке')">⚙️</button>
+      </div>
+    </div>
+
+    <div class="sb-search">
+      <div class="sb-search-wrap">
+        <span class="sb-search-icon">🔍</span>
+        <input type="text" placeholder="Поиск по чатам..." id="searchInp" oninput="filterList(this.value)">
+      </div>
+    </div>
+
+    <div class="chat-list" id="chatList">
+      <div class="empty-list">
+        <div class="emo">💬</div>
+        <div>Нет чатов</div>
+        <div style="margin-top:5px;font-size:12px">Ждём других пользователей...</div>
+      </div>
+    </div>
+
+    <div class="me-bar" id="meBar">
+      <div class="av xs" id="meAv"></div>
+      <div class="me-bar-info">
+        <div class="me-bar-name" id="meName"></div>
+        <div class="me-bar-phone" id="mePhone"></div>
+      </div>
+      <button class="ico-btn" style="color:var(--danger)" onclick="logout()" title="Выйти">🚪</button>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div class="welcome" id="welcome">
+      <img class="wlogo" id="welcomeLogo" src="" alt="">
+      <div class="wt">Выберите чат</div>
+      <div class="ws">или найдите пользователя через ✏️</div>
+    </div>
+
+    <div id="chatView">
+      <div class="chat-hdr" id="chatHdr">
+        <div class="av sm" id="chatAv"></div>
+        <div class="chat-hdr-info">
+          <div class="chat-hdr-name" id="chatName"></div>
+          <div class="chat-hdr-status" id="chatStatus">онлайн</div>
+        </div>
+        <button class="ico-btn">🔍</button>
+        <button class="ico-btn">📞</button>
+        <button class="ico-btn">⋮</button>
+      </div>
+
+      <div class="msgs" id="msgsArea"></div>
+
+      <div class="input-bar">
+        <div class="msg-inp-wrap">
+          <button class="ico-btn-tr" onclick="toast('📎 Прикрепление файлов скоро')">📎</button>
+          <textarea id="msgInput" placeholder="Напишите сообщение..." rows="1"
+            onkeydown="msgKey(event)" oninput="autoH(this)"></textarea>
+          <button class="ico-btn-tr" onclick="toast('😊 Стикеры скоро')">😊</button>
+        </div>
+        <button class="send-btn" onclick="sendMsg()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="newChatModal" onclick="if(event.target===this)closeNewChat()">
+  <div class="modal-card">
+    <div class="modal-title">👥 Выбрать пользователя</div>
+    <div id="userListModal"></div>
+    <button class="btn-main" style="margin-top:16px;background:var(--card);color:var(--text2);box-shadow:none" onclick="closeNewChat()">Отмена</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── LOGO (base64 встроен) ───
+const LOGO_DATA = 'data:image/jpeg;base64,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';
+document.getElementById('authLogoImg').src = LOGO_DATA;
+document.getElementById('sbLogoImg').src = LOGO_DATA;
+document.getElementById('welcomeLogo').src = LOGO_DATA;
+
+// ─── CONFIG ───
+const API = window.location.origin;
+const WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + location.host;
+
+// ─── STATE ───
+let me = null, token = null, ws = null;
+let currentChat = null;
+let contacts = {};
+let convs = {};
+
+// ─── AUTH ───
+function goScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+
+async function requestCode() {
+  const phone = document.getElementById('phoneInp').value.trim();
+  if (!phone) { shake('phoneInp'); return; }
+  const btn = document.getElementById('phoneBtn');
+  btn.innerHTML = '<span class="spin"></span> Отправка...';
+  btn.disabled = true;
+  document.getElementById('phoneErr').style.display = 'none';
+  try {
+    const r = await fetch(`${API}/api/request-code`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ phone })
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      document.getElementById('phoneErr').textContent = d.error || 'Номер не найден';
+      document.getElementById('phoneErr').style.display = 'block';
+    } else {
+      document.getElementById('codeTo').textContent = phone;
+      goScreen('sCode');
+      setTimeout(() => codeInputs()[0].focus(), 100);
+    }
+  } catch { showErr('phoneErr', 'Не удалось подключиться к серверу'); }
+  btn.innerHTML = 'Получить код'; btn.disabled = false;
+}
+
+function codeInputs() { return [...document.querySelectorAll('#codeRow input')]; }
+
+function codeInp(e, idx) {
+  const inputs = codeInputs();
+  const val = e.target.value.replace(/\D/g,'');
+  e.target.value = val;
+  e.target.classList.toggle('filled', !!val);
+  if (val && idx < 5) inputs[idx+1].focus();
+  const full = inputs.map(i=>i.value).join('');
+  if (full.length === 6) verifyCode();
+}
+
+function codeKey(e, idx) {
+  const inputs = codeInputs();
+  if (e.key === 'Backspace' && !inputs[idx].value && idx > 0) {
+    inputs[idx-1].focus(); inputs[idx-1].value = '';
+    inputs[idx-1].classList.remove('filled');
+  }
+}
+
+async function verifyCode() {
+  const phone = document.getElementById('phoneInp').value.trim();
+  const code  = codeInputs().map(i=>i.value).join('');
+  if (code.length < 6) return;
+  const btn = document.getElementById('codeBtn');
+  btn.innerHTML = '<span class="spin"></span> Проверка...'; btn.disabled = true;
+  document.getElementById('codeErr').style.display = 'none';
+  try {
+    const r = await fetch(`${API}/api/verify-code`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ phone, code })
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      showErr('codeErr', d.error || 'Неверный код');
+      codeInputs().forEach(i => { i.value = ''; i.classList.remove('filled'); });
+      codeInputs()[0].focus();
+    } else {
+      token = d.session; me = d.user;
+      localStorage.setItem('tg_token', token);
+      if (d.isNew) { goScreen('sProfile'); document.getElementById('nameInp').focus(); }
+      else launchApp();
+    }
+  } catch { showErr('codeErr', 'Ошибка соединения'); }
+  btn.innerHTML = 'Войти →'; btn.disabled = false;
+}
+
+async function setupProfile() {
+  const name = document.getElementById('nameInp').value.trim();
+  const uname = document.getElementById('unameInp').value.trim().replace(/^@/,'');
+  if (!name || !uname) { toast('⚠️ Заполните оба поля'); return; }
+  try {
+    const r = await fetch(`${API}/api/setup-profile`, {
+      method: 'POST', headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({ name, username: uname })
+    });
+    const d = await r.json();
+    if (r.ok) { me = { ...me, ...d.user }; launchApp(); }
+  } catch { toast('❌ Ошибка'); }
+}
+
+// ─── APP ───
+function launchApp() {
+  document.getElementById('authWrap').style.display = 'none';
+  document.getElementById('app').classList.add('on');
+  const name = me.name || me.username || me.phone;
+  document.getElementById('meName').textContent = name;
+  document.getElementById('mePhone').textContent = me.phone;
+  const meAv = document.getElementById('meAv');
+  meAv.textContent = name[0].toUpperCase();
+  meAv.style.background = avatarColor(name);
+  connectWS();
+  loadContacts();
+}
+
+function connectWS() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => ws.send(JSON.stringify({ type: 'auth', token }));
+  ws.onmessage = ({ data }) => {
+    let m; try { m = JSON.parse(data); } catch { return; }
+    if (m.type === 'users') {
+      m.users.forEach(u => contacts[u.userId] = u);
+      renderList();
+    }
+    if (m.type === 'history') {
+      convs[m.chatId] = m.messages;
+      if (currentChat === m.chatId) renderMsgs();
+    }
+    if (m.type === 'message') {
+      const cid = m.from === me.userId ? m.to : m.from;
+      if (!convs[cid]) convs[cid] = [];
+      if (!convs[cid].find(x => x.id === m.id)) convs[cid].push(m);
+      if (currentChat === cid) { appendMsg(m); scrollBottom(); }
+      else { renderList(); if (m.from !== me.userId) toast(`💬 ${contacts[m.from]?.name || m.from}: ${m.text.slice(0,40)}`); }
+      renderList();
+    }
+  };
+  ws.onclose = () => setTimeout(connectWS, 3000);
+}
+
+async function loadContacts() {
+  try {
+    const r = await fetch(`${API}/api/chats`, { headers:{'Authorization':'Bearer '+token} });
+    const d = await r.json();
+    if (d.contacts) d.contacts.forEach(u => contacts[u.userId] = u);
+    renderList();
+  } catch {}
+}
+
+function renderList(filter = '') {
+  const list = document.getElementById('chatList');
+  const users = Object.values(contacts).filter(u => u.userId !== me.userId);
+  const filtered = filter
+    ? users.filter(u => (u.name||u.username||u.phone||'').toLowerCase().includes(filter.toLowerCase()))
+    : users;
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-list"><div class="emo">👥</div><div>${filter?'Не найдено':'Нет пользователей'}</div></div>`;
+    return;
+  }
+  filtered.sort((a,b) => {
+    const ta = (convs[a.userId]||[]).at(-1)?.ts||0;
+    const tb = (convs[b.userId]||[]).at(-1)?.ts||0;
+    return tb - ta;
+  });
+  list.innerHTML = '';
+  filtered.forEach(u => {
+    const msgs = convs[u.userId] || [];
+    const last = msgs.at(-1);
+    const name = u.name || u.username || u.phone;
+    const unread = msgs.filter(m => m.from === u.userId && !m.read).length;
+    const item = document.createElement('div');
+    item.className = 'chat-item' + (currentChat === u.userId ? ' active' : '');
+    item.onclick = () => openChat(u);
+    item.innerHTML = `
+      <div class="av lg online" style="background:${avatarColor(name)}">${name[0].toUpperCase()}</div>
+      <div class="ci-info">
+        <div class="ci-name">${esc(name)}</div>
+        <div class="ci-preview">${last ? (last.from===me.userId?'✓ ':'')+esc(last.text) : esc(u.phone||'')}</div>
+      </div>
+      <div class="ci-meta">
+        <div class="ci-time">${last ? fmtTime(last.ts) : ''}</div>
+        ${unread ? `<div class="badge">${unread}</div>` : ''}
+      </div>`;
+    list.appendChild(item);
+  });
+}
+
+function filterList(v) { renderList(v); }
+
+function openChat(user) {
+  currentChat = user.userId;
+  const name = user.name || user.username || user.phone;
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('chatView').classList.add('on');
+  document.getElementById('chatName').textContent = name;
+  document.getElementById('chatStatus').textContent = 'онлайн';
+  const chatAv = document.getElementById('chatAv');
+  chatAv.textContent = name[0].toUpperCase();
+  chatAv.style.background = avatarColor(name);
+  renderMsgs();
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'get-history', with: user.userId }));
+  renderList();
+  document.getElementById('msgInput').focus();
+}
+
+function renderMsgs() {
+  const area = document.getElementById('msgsArea');
+  const msgs = convs[currentChat] || [];
+  area.innerHTML = '';
+  if (!msgs.length) {
+    area.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13.5px">Начните общение 👋</div>';
+    return;
+  }
+  let lastDate = '';
+  msgs.forEach(m => {
+    const d = new Date(m.ts).toLocaleDateString('ru', {day:'numeric',month:'long'});
+    if (d !== lastDate) {
+      const sep = document.createElement('div');
+      sep.className = 'date-sep'; sep.textContent = d;
+      area.appendChild(sep); lastDate = d;
+    }
+    area.appendChild(buildBubble(m));
+  });
+  scrollBottom();
+}
+
+function appendMsg(m) {
+  const area = document.getElementById('msgsArea');
+  area.appendChild(buildBubble(m));
+}
+
+function buildBubble(m) {
+  const own = m.from === me.userId;
+  const row = document.createElement('div');
+  row.className = 'msg-row' + (own ? ' own' : '');
+  row.innerHTML = `
+    <div class="bubble">${esc(m.text)}</div>
+    <div class="msg-meta">${own?'✓✓ ':''}${fmtTime(m.ts)}</div>`;
+  return row;
+}
+
+function sendMsg() {
+  const inp = document.getElementById('msgInput');
+  const text = inp.value.trim();
+  if (!text || !currentChat || !ws) return;
+  const m = { type:'message', to: currentChat, text, ts: Date.now(), from: me.userId, id: uid() };
+  ws.send(JSON.stringify(m));
+  if (!convs[currentChat]) convs[currentChat] = [];
+  convs[currentChat].push(m);
+  appendMsg(m); scrollBottom(); renderList();
+  inp.value = ''; inp.style.height = 'auto';
+}
+
+function msgKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } }
+function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+function scrollBottom() { const a = document.getElementById('msgsArea'); a.scrollTop = a.scrollHeight; }
+
+function openNewChat() {
+  const modal = document.getElementById('newChatModal');
+  const list = document.getElementById('userListModal');
+  const users = Object.values(contacts).filter(u => u.userId !== me.userId);
+  if (!users.length) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Нет других пользователей</div>';
+  } else {
+    list.innerHTML = '';
+    users.forEach(u => {
+      const name = u.name || u.username || u.phone;
+      const row = document.createElement('div');
+      row.className = 'user-row';
+      row.onclick = () => { openChat(u); closeNewChat(); };
+      row.innerHTML = `
+        <div class="av sm" style="background:${avatarColor(name)}">${name[0].toUpperCase()}</div>
+        <div><div class="user-row-name">${esc(name)}</div><div class="user-row-phone">${esc(u.phone||'')}</div></div>`;
+      list.appendChild(row);
+    });
+  }
+  modal.classList.add('on');
+}
+
+function closeNewChat() { document.getElementById('newChatModal').classList.remove('on'); }
+
+function avatarColor(s) {
+  const pal = ['#4E3A8E','#3A5E8E','#7A2060','#2D5E6E','#6E4A20','#3A7A50','#5A2050','#3A3A8E'];
+  let h = 0; for (const c of s) h = (h*31 + c.charCodeAt(0)) & 0xFFFF;
+  return pal[h % pal.length];
+}
+
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'}); }
+function esc(t) { if (!t) return ''; return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function uid() { return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.style.display = 'none', 3200);
+}
+function showErr(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }
+function shake(id) { const el = document.getElementById(id); el.style.animation = 'none'; setTimeout(() => el.style.animation = '', 10); }
+function logout() { localStorage.removeItem('tg_token'); location.reload(); }
+
+(async () => {
+  const saved = localStorage.getItem('tg_token');
+  if (!saved) return;
+  try {
+    const r = await fetch(`${API}/api/me`, { headers:{'Authorization':'Bearer '+saved} });
+    if (r.ok) { const d = await r.json(); token = saved; me = d.user; launchApp(); }
+    else localStorage.removeItem('tg_token');
+  } catch {}
+})();
+</script>
+</body>
+  </html>
